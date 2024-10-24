@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -34,6 +36,7 @@ public class CampaignStatService {
       @Nullable Integer pageIndex, @Nullable Integer pageSize,
       @Nullable Metric sortMetric, @Nullable DirectionType sortDirection
   ) {
+
     List<Long> campaignIdsLong = campaignIds == null ? null : campaignIds.stream().map(Long::parseLong).toList();
 
     // Get all campaign reports
@@ -45,8 +48,17 @@ public class CampaignStatService {
     for (SPCampaignReport report : reports) {
       Long campaignId = report.getCampaignId();
 
-      campaignAnalyticMap.computeIfAbsent(campaignId, k -> new SPCampaignStatistic(report))
-          .add(new SPCampaignStatistic(report));
+      SPCampaignStatistic existingStatistic = campaignAnalyticMap.get(campaignId);
+      if (existingStatistic == null) {
+        existingStatistic = new SPCampaignStatistic(report);
+        campaignAnalyticMap.put(campaignId, existingStatistic);
+      } else {
+        existingStatistic.add(new SPCampaignStatistic(report));
+      }
+
+//      campaignAnalyticMap.computeIfAbsent(campaignId, k -> new SPCampaignStatistic(report))
+//          .add(new SPCampaignStatistic(report));
+
     }
 
     // Get all enabled SP campaigns by profile and portfolio
